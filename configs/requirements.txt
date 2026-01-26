@@ -1,0 +1,33 @@
+# Core
+numpy
+pandas
+
+# PDF / Document loading
+pypdf
+beautifulsoup4
+markdown
+
+# Chunking + Orchestration
+langchain
+langchain-community
+
+# Embeddings
+sentence-transformers
+
+# Vector DB
+faiss-cpu
+chromadb
+
+# LLM (اگر بعداً GPT استفاده کردی)
+openai
+
+# UI
+streamlit
+
+# Backend (اختیاری، بعداً)
+fastapi
+uvicorn
+
+# Evaluation
+scikit-learn
+tqdm

@@ -1,0 +1,9 @@
+# Vector index and artifacts
+data/index/
+*.faiss
+*.index
+chunks.json
+
+# Colab / cache
+__pycache__/
+.ipynb_checkpoints/
