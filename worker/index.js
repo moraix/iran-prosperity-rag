@@ -5,7 +5,7 @@ const CORS_HEADERS = {
 };
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
 
     // Handle CORS preflight
@@ -22,9 +22,26 @@ export default {
       }
 
       const body = await request.json().catch(() => ({}));
-      const question = body.question || "";
+      const question = (body.question || "").toString().trim();
 
-      return new Response(JSON.stringify({ answer: `Echo: ${question}` }), {
+      if (!question) {
+        return new Response(JSON.stringify({ error: "Missing question" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+        });
+      }
+
+      // Workers AI (binding name: AI, set in wrangler.jsonc)
+      const result = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
+        prompt: `Answer the question concisely.\n\nQuestion: ${question}\nAnswer:`,
+        max_tokens: 200,
+      });
+
+      const answer =
+        (result && (result.response || result.result || result.output_text)) ??
+        (typeof result === "string" ? result : JSON.stringify(result));
+
+      return new Response(JSON.stringify({ answer }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...CORS_HEADERS },
       });
