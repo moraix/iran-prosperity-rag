@@ -1,5 +1,5 @@
 {
-  "name": "iran-prosperity-rag-worker",
+  "name": "iran-prosperity-rag",
   "compatibility_date": "2026-01-27",
   "main": "worker/index.js"
 }
