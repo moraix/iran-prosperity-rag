@@ -92,19 +92,20 @@ export default {
 
       // 4) LLM answer strictly using context
       const prompt = [
-        "You are a QA assistant for a specific document set.",
+        "You are a QA assistant answering questions strictly from the provided CONTEXT.",
         "Rules:",
-        "- Answer ONLY using the CONTEXT below.",
-        '- If not explicitly supported, reply exactly: "I don\'t know based on the provided documents."',
-        "- Do NOT guess or use outside knowledge.",
-        "- Keep the answer concise (~120 words max).",
+        "- Start directly with the answer. Do NOT say phrases like 'Based on the documents' or 'the answer is'.",
+        "- Do NOT mention chunks, context, or internal references (e.g., 'Chunk 4').",
+        "- Use ONLY the information in the CONTEXT.",
+        "- If the answer is not explicitly stated, reply exactly: \"I don't know based on the provided documents.\"",
+        "- Keep the answer concise and clear (max ~120 words).",
         "",
         "CONTEXT:",
         context,
         "",
         `QUESTION: ${question}`,
-        "ANSWER:",
-      ].join("\n");
+        "ANSWER:"
+      ].join("\n");      
 
       const llm = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
         prompt,
