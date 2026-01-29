@@ -4,23 +4,30 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Iran Prosperity RAG</title>
-    <style>
-      body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; }
-      textarea { width: 100%; height: 90px; }
-      button { margin-top: 10px; padding: 10px 14px; }
-      pre { background: #f6f6f6; padding: 12px; white-space: pre-wrap; }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet">  
   </head>
   <body>
-    <h1>Iran Prosperity RAG</h1>
 
-    <label>Question</label>
-    <textarea id="q" placeholder="Ask a question..."></textarea>
-    <button id="ask">Ask</button>
-
-    <h3>Answer</h3>
-    <pre id="out"></pre>
-
+    <div class="container">
+      <div class="card">
+        <h1 class="title">Iran Prosperity Project</h1>
+    
+        <div class="field">
+          <label for="q">Question</label>
+          <textarea id="q" placeholder="Ask a question..."></textarea>
+        </div>
+    
+        <button id="ask">Ask</button>
+    
+        <div class="answer-section">
+          <h3>Answer</h3>
+          <pre id="out"></pre>
+        </div>
+      </div>
+    </div>    
     <script>
       const API_URL = "https://iran-prosperity-rag.mohammadmehdiomidi95.workers.dev/api/chat";
 
