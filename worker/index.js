@@ -36,7 +36,7 @@ export default {
         return new Response("Method Not Allowed", { status: 405, headers: CORS_HEADERS });
       }
 
-      // Check bindings early (most common cause of 500)
+      // Check bindings early
       if (!env.AI) return json({ error: "Workers AI binding (AI) is missing" }, 500);
       if (!env.VECTORIZE) return json({ error: "Vectorize binding (VECTORIZE) is missing" }, 500);
 
@@ -46,7 +46,7 @@ export default {
 
       if (!question) return json({ error: "Missing question" }, 400);
 
-      // 1) Embed question (bge-base-en-v1.5 returns { data: [ [..768..] ] })
+      // 1) Embed question
       const emb = await env.AI.run("@cf/baai/bge-base-en-v1.5", { text: [question] });
       const queryVector = emb?.data?.[0];
       if (!Array.isArray(queryVector)) {
@@ -69,24 +69,39 @@ export default {
 
       // 3) Build context + citations
       const pages = new Set();
+      const urls = new Set();
       const ctx = [];
 
       for (const m of items) {
         const page = m?.metadata?.page;
+        const urlSrc = m?.metadata?.url;
         const text = cleanText(m?.metadata?.text);
+
         if (!text) continue;
+
         ctx.push({ page, text });
+
         if (page !== null && page !== undefined && page !== "") pages.add(page);
+        if (urlSrc) urls.add(urlSrc);
       }
 
-      const context = ctx.slice(0, 5).map((c, i) => `Chunk ${i + 1} (page ${c.page}): ${c.text}`).join("\n\n");
+      const context = ctx
+        .slice(0, 5)
+        .map((c, i) => `Chunk ${i + 1} (page ${c.page}): ${c.text}`)
+        .join("\n\n");
+
       const sortedPages = Array.from(pages).sort((a, b) => Number(a) - Number(b));
-      const citations = sortedPages.map((p) => `[p.${p}]`).join(" ");
+      const pageCites = sortedPages.map((p) => `[p.${p}]`).join(" ");
+      const urlCites = Array.from(urls).map((u) => `[${u}]`).join(" ");
+      const citations = [pageCites, urlCites].filter(Boolean).join(" ");
 
       if (context.length < 600) {
         return json({
           answer: "I don't know based on the provided documents.",
-          sources: sortedPages.map((p) => `p.${p}`),
+          sources: [
+            ...sortedPages.map((p) => `p.${p}`),
+            ...Array.from(urls),
+          ],
         });
       }
 
@@ -104,8 +119,8 @@ export default {
         context,
         "",
         `QUESTION: ${question}`,
-        "ANSWER:"
-      ].join("\n");      
+        "ANSWER:",
+      ].join("\n");
 
       const llm = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
         prompt,
@@ -120,10 +135,12 @@ export default {
 
       return json({
         answer: `${finalAnswer}\n\nSources: ${citations}`,
-        sources: sortedPages.map((p) => `p.${p}`),
+        sources: [
+          ...sortedPages.map((p) => `p.${p}`),
+          ...Array.from(urls),
+        ],
       });
     } catch (err) {
-      // Always return CORS even on crash
       return json(
         {
           error: "Worker crashed",
