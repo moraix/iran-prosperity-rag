@@ -4,51 +4,102 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Iran Prosperity RAG</title>
+
     <link rel="stylesheet" href="style.css">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet">  
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet">
   </head>
-  <body>
 
+  <body>
     <div class="container">
       <div class="logo-wrapper">
         <img src="IPP-Logo.png" alt="Logo" class="logo">
-      </div>      
+      </div>
+
       <div class="card">
         <h1 class="title">Iran Prosperity Project</h1>
-    
+
+        <!-- Chat history -->
+        <div id="chat" class="chat"></div>
+
+        <!-- Input -->
         <div class="field">
-          <label for="q">Question</label>
+          <label for="q">Your question</label>
           <textarea id="q" placeholder="Ask a question..."></textarea>
         </div>
-    
+
         <button id="ask">Ask</button>
-    
-        <div class="answer-section">
-          <h3>Answer</h3>
-          <pre id="out"></pre>
-        </div>
       </div>
-    </div>    
+    </div>
+
     <script>
       const API_URL = "https://iran-prosperity-rag.mohammadmehdiomidi95.workers.dev/api/chat";
 
-      document.getElementById("ask").onclick = async () => {
-        const question = document.getElementById("q").value.trim();
+      const chatEl = document.getElementById("chat");
+      const inputEl = document.getElementById("q");
+      const askBtn = document.getElementById("ask");
+
+      // In-memory conversation history (clears on refresh)
+      let history = [];
+
+      function addMessage(role, text) {
+        const div = document.createElement("div");
+        div.className = `msg ${role}`;
+        div.textContent = text;
+        chatEl.appendChild(div);
+        chatEl.scrollTop = chatEl.scrollHeight;
+      }
+
+      async function askQuestion() {
+        const question = inputEl.value.trim();
         if (!question) return;
 
-        document.getElementById("out").textContent = "Loading...";
+        inputEl.value = "";
 
-        const r = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question })
-        });
+        // Show user message
+        addMessage("user", question);
+        history.push({ role: "user", content: question });
 
-        const data = await r.json();
-        document.getElementById("out").textContent = data.answer || JSON.stringify(data, null, 2);
-      };
+        // Show loading message
+        const loadingDiv = document.createElement("div");
+        loadingDiv.className = "msg assistant";
+        loadingDiv.textContent = "Thinking...";
+        chatEl.appendChild(loadingDiv);
+        chatEl.scrollTop = chatEl.scrollHeight;
+
+        try {
+          const r = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              question,
+              history: history.slice(-8)
+            })
+          });
+
+          const data = await r.json();
+          const answer = data.answer || "Error";
+
+          chatEl.removeChild(loadingDiv);
+          addMessage("assistant", answer);
+
+          history.push({ role: "assistant", content: answer });
+        } catch (err) {
+          chatEl.removeChild(loadingDiv);
+          addMessage("assistant", "Request failed.");
+        }
+      }
+
+      askBtn.onclick = askQuestion;
+
+      inputEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          askQuestion();
+        }
+      });
     </script>
   </body>
 </html>
