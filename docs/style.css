@@ -136,5 +136,49 @@ pre {
     height: auto;
 }
   
-
+/* Chat area */
+.chat {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 18px;
+  
+    /* like Telegram: a scrollable history area */
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 14px;
+  
+    border-radius: 14px;
+    background: #f6f7fb;
+    box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+  
+  /* Message bubble base */
+.msg {
+    max-width: 78%;
+    padding: 10px 12px;
+    border-radius: 14px;
+    line-height: 1.55;
+    white-space: pre-wrap;   /* keep line breaks */
+    word-wrap: break-word;
+  
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+  
+  /* Assistant on the left */
+.msg.assistant {
+    align-self: flex-start;
+    background: #ffffff;
+    color: #111827;
+    border-top-left-radius: 6px;  /* little “tail” feel */
+}
+  
+  /* User on the right */
+.msg.user {
+    align-self: flex-end;
+    background: #2D469B;
+    color: #ffffff;
+    border-top-right-radius: 6px;
+}
+  
 
