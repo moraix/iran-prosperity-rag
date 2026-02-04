@@ -44,10 +44,31 @@ export default {
       const question = (body.question || "").toString().trim();
       const topK = Math.max(1, Math.min(Number(body.top_k ?? 5) || 5, 10));
 
+      // Conversation history (from frontend)
+      const history = Array.isArray(body.history) ? body.history : [];
+
+      const shortHistory = history.slice(-8).map(m => ({
+        role: (m.role === "user" || m.role === "assistant") ? m.role : "user",
+        content: (m.content || "").toString().trim()
+      }));
+
+
       if (!question) return json({ error: "Missing question" }, 400);
 
+      const lastUserText = shortHistory
+        .filter(m => m.role === "user")
+        .slice(-2)
+        .map(m => m.content)
+        .join("\n");
+
+      const retrievalQuery = lastUserText
+        ? `${lastUserText}\n${question}`
+        : question;
       // 1) Embed question
-      const emb = await env.AI.run("@cf/baai/bge-base-en-v1.5", { text: [question] });
+      const emb = await env.AI.run("@cf/baai/bge-base-en-v1.5", {
+        text: [retrievalQuery]
+      });      
+
       const queryVector = emb?.data?.[0];
       if (!Array.isArray(queryVector)) {
         return json({ error: "Embedding failed", debug: emb }, 500);
@@ -105,22 +126,31 @@ export default {
         });
       }
 
+      const convo = shortHistory
+        .map(m => `${m.role.toUpperCase()}: ${m.content}`)
+        .join("\n");
+
+
       // 4) LLM answer strictly using context
       const prompt = [
-        "You are a QA assistant answering questions strictly from the provided CONTEXT.",
+        "You are a QA assistant answering strictly from the provided CONTEXT.",
+        "You MUST consider the conversation history to resolve references (e.g., 'it', 'this', 'they').",
         "Rules:",
-        "- Start directly with the answer. Do NOT say phrases like 'Based on the documents' or 'the answer is'.",
-        "- Do NOT mention chunks, context, or internal references (e.g., 'Chunk 4').",
+        "- Start directly with the answer. Do NOT mention documents, chunks, or context.",
         "- Use ONLY the information in the CONTEXT.",
-        "- If the answer is not explicitly stated, reply exactly: \"I don't know based on the provided documents.\"",
-        "- Keep the answer concise and clear (max ~120 words).",
+        "- If not explicitly supported, reply exactly: \"I don't know based on the provided documents.\"",
+        "- Keep the answer concise.",
+        "",
+        "CONVERSATION HISTORY:",
+        convo || "(none)",
         "",
         "CONTEXT:",
         context,
         "",
         `QUESTION: ${question}`,
-        "ANSWER:",
+        "ANSWER:"
       ].join("\n");
+      
 
       const llm = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
         prompt,
